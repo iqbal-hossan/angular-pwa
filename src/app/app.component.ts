@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { SwUpdate } from '@angular/service-worker';
 
 @Component({
   selector: 'app-root',
@@ -10,7 +11,9 @@ export class AppComponent implements OnInit {
   title = 'angular-pwa';
   apiData: any;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private update: SwUpdate,) {
+    this.updateClient();
+  }
 
   ngOnInit(): void {
     this.http.get('https://jsonplaceholder.typicode.com/todos/').subscribe(
@@ -23,4 +26,24 @@ export class AppComponent implements OnInit {
       }
     );
   }
+
+updateClient(){
+  if(!this.update.isEnabled){
+    console.log('Not Enabled');
+    return;
+  }
+
+  this.update.available.subscribe((event) =>{
+    console.log('current', event.current, 'available', event.available);
+    if(confirm('Update available for the app. Please confirm!')){
+      this.update.activateUpdate().then(() => document.location.reload());
+    }
+  });
+
+  this.update.activated.subscribe((event) =>{
+    console.log(`previous`, event.previous, `current`, event.current)
+  })
+}
+
+
 }
