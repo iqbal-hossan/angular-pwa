@@ -1,6 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { ApplicationRef, Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { SwUpdate } from '@angular/service-worker';
+import { interval } from 'rxjs';
 
 @Component({
   selector: 'app-root',
@@ -11,8 +12,9 @@ export class AppComponent implements OnInit {
   title = 'angular-pwa';
   apiData: any;
 
-  constructor(private http: HttpClient, private update: SwUpdate,) {
+  constructor(private http: HttpClient, private update: SwUpdate, private appRef: ApplicationRef ) {
     this.updateClient();
+    this.checkUpdate();
   }
 
   ngOnInit(): void {
@@ -42,6 +44,20 @@ updateClient(){
 
   this.update.activated.subscribe((event) =>{
     console.log(`previous`, event.previous, `current`, event.current)
+  })
+}
+
+
+checkUpdate(){
+  this.appRef.isStable.subscribe((isStable) =>{
+    if(isStable){
+      const timeInterval = interval(6 * 60 * 60 * 1000);
+
+      timeInterval.subscribe(() =>{
+        this.update.checkForUpdate().then(() => console.log('checked'));
+        console.log('update checked')
+      })
+    }
   })
 }
 
