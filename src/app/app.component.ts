@@ -1,6 +1,6 @@
 import { ApplicationRef, Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { SwPush, SwUpdate } from '@angular/service-worker';
+import { SwPush, SwRegistrationOptions, SwUpdate } from '@angular/service-worker';
 import { interval } from 'rxjs';
 
 @Component({
@@ -25,7 +25,7 @@ export class AppComponent implements OnInit {
     this.swPush.messages.subscribe((message) => console.log(message));
 
     this.swPush.notificationClicks.subscribe(
-      (({action, notification}) =>{
+      (({ action, notification }) => {
         window.open(notification.data.url);
         console.log(notification.data.url)
       })
@@ -88,4 +88,25 @@ export class AppComponent implements OnInit {
       .catch(err => console.log(err))
   }
 
+  postSync() {
+    let obj = {
+      name: 'Subrat'
+    }
+    // api call
+    this.http.post('http://localhost:3000/data', obj).subscribe(
+      res => {
+        console.log(res);
+      }, err => {
+        this.backgroundSync();
+      }
+    )
+  }
+
+  backgroundSync() {
+    navigator.serviceWorker.ready
+      .then((swRegistration) =>
+        swRegistration.sync.register('post-data'))
+      .catch(console.log)
+  }
+  
 }

@@ -327,7 +327,10 @@
     </a>
 </div>
 
+<div style="margin-top: 100px; padding: 20px;">
+  <button (click)="postSync()">Post Data</button>
 
+</div>
 <section style="padding: 20px; margin-top: 50px;">
   <div *ngFor="let item of apiData" style="padding: 20px; ">
     <strong>User Id: {{item.userId}}</strong>
