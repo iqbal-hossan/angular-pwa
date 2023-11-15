@@ -2,6 +2,7 @@ import { ApplicationRef, Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { SwPush, SwRegistrationOptions, SwUpdate } from '@angular/service-worker';
 import { interval } from 'rxjs';
+import { IndexedDBService } from './services/indexed-db.service';
 
 @Component({
   selector: 'app-root',
@@ -13,13 +14,37 @@ export class AppComponent implements OnInit {
   apiData: any;
   private readonly publicKey = 'BKLrGCR8gog7yhdnJ_1lwUD7SG2mU58XXz67i8leelkXEPrp1CspbjnkHnmlQIQMu_kIKxWozCHnan375xsS7v0';
   private readonly privateKey = 'TNxVN5sjDPobDosVIEWg2s4xAP7_ZPtZoTS9XN_PXSI';
-
-  constructor(private http: HttpClient, private update: SwUpdate, private appRef: ApplicationRef, private swPush: SwPush) {
+  emp_obj = {
+    name: 'Iqbal Hossan',
+    designation: 'Software Developer',
+    employeId: '620162'
+  }
+  constructor(
+    private http: HttpClient,
+    private update: SwUpdate,
+    private appRef: ApplicationRef,
+    private swPush: SwPush,
+    private indexedDBServices: IndexedDBService
+  ) {
     this.updateClient();
     this.checkUpdate();
   }
 
   ngOnInit(): void {
+
+
+    // if(!navigator.onLine){
+    //   alert('Please check your internet connection');
+    // }
+
+    addEventListener('offline', (e) => {
+      alert('Please check your internet connection');
+    })
+
+    addEventListener('online', (e) => {
+      alert('You are online');
+    })
+
     this.pushSubscription();
 
     this.swPush.messages.subscribe((message) => console.log(message));
@@ -89,18 +114,48 @@ export class AppComponent implements OnInit {
   }
 
   postSync() {
-    let obj = {
-      name: 'Subrat'
+
+    if (!navigator.onLine) {
+      console.log("offline")
+      alert('Please check your internet connection');
+      this.indexedDBServices.addEmp(this.emp_obj)
+            ?.then(this.backgroundSync)
+            .catch(console.log);
+    } else {
+      // api call
+      this.http.post('http://localhost:3000/data', this.emp_obj).subscribe(
+        res => {
+          console.log(res);
+        }, err => {
+          this.indexedDBServices.addEmp(this.emp_obj)
+            ?.then(this.backgroundSync)
+            .catch(console.log);
+          // this.backgroundSync();
+        }
+      )
     }
+  }
+
+  deleteSync() {
+    // let emp_obj = {
+    //   name: 'Iqbal Hossan',
+    //   designation: 'Software Developer',
+    //   employeId: '620162'
+    // }
     // api call
-    this.http.post('http://localhost:3000/data', obj).subscribe(
+    this.http.post('http://localhost:3000/data', this.emp_obj).subscribe(
       res => {
         console.log(res);
       }, err => {
-        this.backgroundSync();
+        this.indexedDBServices.deleteUser('employee')
+          ?.then(this.backgroundSync)
+          .catch(console.log);
+        // this.backgroundSync();
       }
     )
   }
+
+
 
   backgroundSync() {
     navigator.serviceWorker.ready
@@ -108,5 +163,5 @@ export class AppComponent implements OnInit {
         swRegistration.sync.register('post-data'))
       .catch(console.log)
   }
-  
+
 }
